@@ -25,6 +25,10 @@ dynamic = ["version"]
 test = ["mypy", "pytest"]
 dev = ["pre-commit", "release-version"]
 
+[project.urls]
+Homepage = "https://github.com/actris-cloudnet/ceilopyter"
+Issues = "https://github.com/actris-cloudnet/ceilopyter/issues"
+
 [tool.hatch.version]
 path = "ceilopyter/version.py"
 
