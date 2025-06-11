@@ -7,7 +7,10 @@ from pathlib import Path
 from . import utils
 from .common import InvalidMessageError, Message, Status
 
-FORMAT = utils.date_format_to_regex(rb"-%Y-%m-%d %H:%M:%S\r?\n")
+FORMATS = [
+    utils.date_format_to_regex(rb"-%Y-%m-%d %H:%M:%S\r?\n"),
+    utils.date_format_to_regex(rb"%Y-%m-%d %H:%M:%S,"),
+]
 
 
 class CtStatus(Status):
@@ -89,12 +92,13 @@ def read_ct_file(
     content = Path(filename).read_bytes()
     time = []
     data = []
-    for ts, msg in utils.parse_file(content, FORMAT):
-        try:
-            data.append(read_ct_message(msg))
-            time.append(ts)
-        except (InvalidMessageError, ValueError) as e:
-            logging.debug("Invalid message: %s", e)
+    for fmt in FORMATS:
+        for ts, msg in utils.parse_file(content, fmt):
+            try:
+                data.append(read_ct_message(msg))
+                time.append(ts)
+            except (InvalidMessageError, ValueError) as e:
+                logging.debug("Invalid message: %s", e)
     return time, data
 
 
