@@ -8,9 +8,8 @@ Python package for reading ceilometer data.
 ## Supported ceilometers
 
 - Campbell Scientific CS135
-- Vaisala CL31
-- Vaisala CL51
-- Vaisala CT25K
+- Lufft CHM 15k and 15k-x
+- Vaisala CL31, CL51, CL61, CT25K and LD40
 
 ## License
 
