@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 
-from . import utils
-from .common import InvalidMessageError, Message, Status
+from .. import utils
+from ..common import InvalidMessageError, Message, Status
 
 FORMATS = [
     utils.date_format_to_regex(rb"%Y-%m-%dT%H:%M:%S.%f,"),
