@@ -8,7 +8,7 @@ from cftime import num2pydate
 from numpy import ma
 
 from ..ceilo import Ceilo
-from ..ceilo_raw import CeiloRaw
+from ..ceilo_raw import CeiloRaw, concatenate_raw
 
 
 def read_chm15k(
@@ -23,7 +23,9 @@ def read_chm15k(
     raw = []
     for file in files:
         raw.append(_read_file(file))
-    return Ceilo(raw, calibration_factor)
+    concat = concatenate_raw(raw)
+    beta_raw = concat.beta * calibration_factor
+    return Ceilo(concat, beta_raw, None, calibration_factor)
 
 
 def _read_file(file: str | PathLike) -> CeiloRaw:

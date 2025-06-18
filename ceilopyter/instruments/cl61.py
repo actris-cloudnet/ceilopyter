@@ -6,7 +6,7 @@ import netCDF4
 from cftime import num2pydate
 
 from ..ceilo import Ceilo
-from ..ceilo_raw import CeiloRaw
+from ..ceilo_raw import CeiloRaw, concatenate_raw
 
 
 def read_cl61(
@@ -21,7 +21,9 @@ def read_cl61(
             raw = list(executor.map(_read_file, files))
     else:
         raw = [_read_file(files)]
-    return Ceilo(raw, calibration_factor)
+    concat = concatenate_raw(raw)
+    beta_raw = concat.beta * calibration_factor
+    return Ceilo(concat, beta_raw, None, calibration_factor)
 
 
 def _read_file(file: str | PathLike) -> CeiloRaw:
