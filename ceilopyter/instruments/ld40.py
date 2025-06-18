@@ -5,7 +5,7 @@ from os import PathLike
 import numpy as np
 
 from ..ceilo import Ceilo
-from ..ceilo_raw import CeiloRaw
+from ..ceilo_raw import CeiloRaw, concatenate_raw
 from ..common import InvalidMessageError
 
 
@@ -21,7 +21,9 @@ def read_ld40(
     raw = []
     for file in files:
         raw.append(_read_file(file))
-    return Ceilo(raw, calibration_factor)
+    concat = concatenate_raw(raw)
+    beta_raw = concat.beta * calibration_factor
+    return Ceilo(concat, beta_raw, None, calibration_factor)
 
 
 def _read_file(filename: str | PathLike) -> CeiloRaw:
