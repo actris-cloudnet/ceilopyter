@@ -5,7 +5,7 @@ from numpy import ma
 
 def remove_noise(
     beta_uncorr: npt.NDArray[np.floating], noise_floor: float, snr_limit: float = 5
-) -> npt.NDArray[np.bool]:
+) -> npt.NDArray[np.bool_]:
     zero_ranges = np.all(beta_uncorr == 0, axis=0)
     n_zeros = np.argmax(~zero_ranges[::-1])
 
