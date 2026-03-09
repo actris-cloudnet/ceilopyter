@@ -127,7 +127,7 @@ def read_cl_message(message: bytes) -> ClMessage:
         raise InvalidMessageError(msg)
     subclass = line1[7:8]
     if subclass in (b"1", b"2", b"3", b"4"):
-        line3_len = 31  # CL31
+        line3_len = 35  # CL31
     elif subclass == b"6":
         line3_len = 40  # CL51
     else:
