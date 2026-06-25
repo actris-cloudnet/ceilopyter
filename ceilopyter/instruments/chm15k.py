@@ -9,6 +9,9 @@ from numpy import ma
 
 from ..ceilo import Ceilo
 from ..ceilo_raw import CeiloRaw, concatenate_raw
+from ..noise import NOISE_FLOORS, screen_noise
+
+NOISE_FLOOR = NOISE_FLOORS["chm15k"]
 
 
 def read_chm15k(
@@ -25,7 +28,8 @@ def read_chm15k(
         raw.append(_read_file(file))
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw, None, calibration_factor)
+    beta = screen_noise(beta_raw, concat.range, noise_floor=NOISE_FLOOR)
+    return Ceilo(concat, beta_raw, beta, calibration_factor)
 
 
 def _read_file(file: str | PathLike) -> CeiloRaw:

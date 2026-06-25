@@ -12,6 +12,7 @@ class CeiloRaw:
         beta: Range-corrected backscatter coefficient (sr-1 m-1)
         wavelength: Wavelength (nm)
         zenith_angle: Zenith angle (deg)
+        depol: Linear depolarization ratio (CL61 only, else None)
     """
 
     def __init__(
@@ -21,12 +22,14 @@ class CeiloRaw:
         beta: npt.NDArray[np.floating],
         wavelength: float,
         zenith_angle: npt.NDArray[np.floating] | None = None,
+        depol: npt.NDArray[np.floating] | None = None,
     ):
         self.time = time
         self.range = range
         self.beta = beta
         self.wavelength = wavelength
         self.zenith_angle = zenith_angle
+        self.depol = depol
 
 
 def concatenate_raw(raw: list[CeiloRaw]) -> CeiloRaw:
@@ -37,11 +40,6 @@ def concatenate_raw(raw: list[CeiloRaw]) -> CeiloRaw:
 
     all_time = np.concatenate([r.time for r in raw])
     all_time, time_ind = np.unique(all_time, return_index=True)
-    all_zenith_angle = (
-        None
-        if all(r.zenith_angle is None for r in raw)
-        else np.concatenate([r.zenith_angle for r in raw])[time_ind]
-    )
 
     wavelength = raw[0].wavelength
     if any(r.wavelength != wavelength for r in raw):
@@ -53,17 +51,36 @@ def concatenate_raw(raw: list[CeiloRaw]) -> CeiloRaw:
         if not np.array_equal(rng, max_rng[: len(rng)]):
             raise ValueError("Inconsistent ranges")
 
-    all_beta = ma.masked_all((len(all_time), len(max_rng)))
-    i = 0
-    for r in raw:
-        all_beta[i : i + len(r.time), : len(r.range)] = r.beta
-        i += len(r.time)
-    all_beta = all_beta[time_ind]
+    # Fill in the original (possibly time-overlapping) order, then select the
+    # unique, sorted rows with `time_ind`. The buffer must be sized to the total
+    # number of profiles, not the unique count, or overlapping timestamps across
+    # files overflow the slice assignment.
+    n_total = sum(len(r.time) for r in raw)
+
+    def concat_field(attr: str, *, per_gate: bool) -> npt.NDArray[np.floating] | None:
+        if all(getattr(r, attr) is None for r in raw):
+            return None
+        shape = (n_total, len(max_rng)) if per_gate else (n_total,)
+        field = ma.masked_all(shape)
+        i = 0
+        for r in raw:
+            values = getattr(r, attr)
+            if values is not None:
+                if per_gate:
+                    field[i : i + len(r.time), : len(r.range)] = values
+                else:
+                    field[i : i + len(r.time)] = values
+            i += len(r.time)
+        return field[time_ind]
+
+    all_beta = concat_field("beta", per_gate=True)
+    assert all_beta is not None  # beta is always present
 
     return CeiloRaw(
         all_time,
         max_rng,
         all_beta,
         wavelength,
-        all_zenith_angle,
+        concat_field("zenith_angle", per_gate=False),
+        depol=concat_field("depol", per_gate=True),
     )

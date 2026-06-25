@@ -22,8 +22,8 @@ dependencies = ["netCDF4", "numpy"]
 dynamic = ["version"]
 
 [project.optional-dependencies]
-test = ["mypy", "pytest"]
 dev = ["pre-commit", "release-version"]
+test = ["mypy", "pytest"]
 
 [project.urls]
 Homepage = "https://github.com/actris-cloudnet/ceilopyter"

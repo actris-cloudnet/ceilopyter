@@ -1,1 +1,10 @@
 __pycache__
+
+# Data files dropped into the repo root during manual testing. Anchored to the
+# root so test fixtures under tests/data/ are unaffected.
+/*.nc
+/*.dat
+/*.DAT
+/*.gz
+/*.png
+/*.part

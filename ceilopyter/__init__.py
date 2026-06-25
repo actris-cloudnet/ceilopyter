@@ -1,3 +1,4 @@
+from .ceilo import Ceilo as Ceilo
 from .instruments.chm15k import read_chm15k as read_chm15k
 from .instruments.cl31 import read_cl31 as read_cl31
 from .instruments.cl51 import read_cl51 as read_cl51

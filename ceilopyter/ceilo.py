@@ -14,6 +14,7 @@ class Ceilo:
         beta: Screened range-corrected backscatter coefficient (sr-1 m-1)
         wavelength: Wavelength (nm)
         zenith_angle: Zenith angle (deg)
+        depol: Linear depolarization ratio (CL61 only, else None)
     """
 
     def __init__(
@@ -30,3 +31,4 @@ class Ceilo:
         self.calibration_factor = calibration_factor
         self.wavelength = raw.wavelength
         self.zenith_angle = raw.zenith_angle
+        self.depol = raw.depol
