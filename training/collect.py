@@ -51,7 +51,9 @@ class CollectConfig:
         overlap_full_threshold: Reference overlap value at/above which the
             overlap is considered complete; the fit band starts here.
         max_std_over_mean: Maximum temporal std/mean of the signal in the fit
-            band for the window to count as stable.
+            band for the window to count as stable. The default (0.05) reflects
+            the CHM15k photon-noise floor near 1.2 km on real data; tighter
+            values are unachievable even in clear, stable conditions.
         min_cloud_base: Cloud base must be absent or above this range (m).
         clear_sky_value: Value of ``sci`` that means clear sky.
         max_overlap_rel_error: Maximum relative error between candidate and
@@ -65,7 +67,7 @@ class CollectConfig:
     max_fit_range: float = 1200.0
     min_fit_length: float = 150.0
     overlap_full_threshold: float = 0.99
-    max_std_over_mean: float = 0.015
+    max_std_over_mean: float = 0.05
     min_cloud_base: float = 1200.0
     clear_sky_value: int = 0
     max_overlap_rel_error: float = 0.01
