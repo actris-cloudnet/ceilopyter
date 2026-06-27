@@ -8,6 +8,9 @@ from .instruments.cs135 import read_cs135 as read_cs135
 from .instruments.ct25k import read_ct25k as read_ct25k
 from .instruments.ld40 import read_ld40 as read_ld40
 from .lidar import read_lidar as read_lidar
+from .overlap.apply import correct_overlap as correct_overlap
+from .overlap.model import OverlapModel as OverlapModel
+from .overlap.model import read_overlap_model as read_overlap_model
 from .readers.read_cl import read_cl_file as read_cl_file
 from .readers.read_cl import read_cl_message as read_cl_message
 from .readers.read_cs import read_cs_file as read_cs_file

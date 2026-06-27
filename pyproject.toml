@@ -29,12 +29,18 @@ test = ["mypy", "pytest"]
 Homepage = "https://github.com/actris-cloudnet/ceilopyter"
 Issues = "https://github.com/actris-cloudnet/ceilopyter/issues"
 
+[tool.hatch.build.targets.wheel]
+packages = ["ceilopyter"]
+
 [tool.hatch.version]
 path = "ceilopyter/version.py"
 
 [[tool.mypy.overrides]]
 module = ["cftime.*"]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
 
 [tool.release-version]
 filename = "ceilopyter/version.py"

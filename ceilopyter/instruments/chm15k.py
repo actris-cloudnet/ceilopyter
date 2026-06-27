@@ -10,6 +10,8 @@ from numpy import ma
 from ..ceilo import Ceilo
 from ..ceilo_raw import CeiloRaw, concatenate_raw
 from ..noise import NOISE_FLOORS, screen_noise
+from ..overlap.apply import correct_overlap
+from ..overlap.model import OverlapModel, read_overlap_model
 
 NOISE_FLOOR = NOISE_FLOORS["chm15k"]
 
@@ -17,7 +19,23 @@ NOISE_FLOOR = NOISE_FLOORS["chm15k"]
 def read_chm15k(
     files: str | PathLike | list[str | PathLike],
     calibration_factor: float | None = None,
+    *,
+    overlap_model: OverlapModel | str | PathLike | None = None,
 ) -> Ceilo:
+    """Read Lufft CHM15k / 15k-x netCDF file(s).
+
+    Args:
+        files: File path or list of paths.
+        calibration_factor: Backscatter calibration factor (defaults to 3e-12
+            with a warning if omitted).
+        overlap_model: Optional temperature-dependent overlap correction model
+            (an ``OverlapModel`` or a path to a model netCDF). When given, the
+            correction is applied before noise screening. The model must match
+            the instrument's optical module.
+
+    Returns:
+        The CHM15k data.
+    """
     if not isinstance(files, list):
         files = [files]
     if calibration_factor is None:
@@ -29,7 +47,15 @@ def read_chm15k(
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
     beta = screen_noise(beta_raw, concat.range, noise_floor=NOISE_FLOOR)
-    return Ceilo(concat, beta_raw, beta, calibration_factor)
+    ceilo = Ceilo(concat, beta_raw, beta, calibration_factor)
+    if overlap_model is not None:
+        model = (
+            overlap_model
+            if isinstance(overlap_model, OverlapModel)
+            else read_overlap_model(overlap_model)
+        )
+        ceilo = correct_overlap(ceilo, model)
+    return ceilo
 
 
 def _read_file(file: str | PathLike) -> CeiloRaw:
@@ -39,7 +65,17 @@ def _read_file(file: str | PathLike) -> CeiloRaw:
         beta = _get_beta(nc)
         wavelength = nc["wavelength"][:]
         zenith_angle = nc["zenith"][:]
-        return CeiloRaw(time, range, beta, wavelength, zenith_angle)
+        # Internal temperature (K) feeds the temperature-dependent overlap
+        # correction; old firmware files may not have it.
+        internal_temperature = nc["temp_int"][:] if "temp_int" in nc.variables else None
+        return CeiloRaw(
+            time,
+            range,
+            beta,
+            wavelength,
+            zenith_angle,
+            internal_temperature=internal_temperature,
+        )
 
 
 def _get_beta(nc: netCDF4.Dataset) -> npt.NDArray[np.floating]:

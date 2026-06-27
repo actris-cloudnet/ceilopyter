@@ -41,3 +41,18 @@ def test_average_time_handles_scalar_zenith():
     avg = average_time(c, 30)
     assert avg.beta.shape == (2, 4)
     assert np.ndim(avg.zenith_angle) == 0
+
+
+def test_average_time_averages_internal_temperature():
+    c = _ceilo()  # 6 profiles, 10 s apart
+    c.internal_temperature = np.arange(6, dtype=float) + 273.15
+    avg = average_time(c, 30)  # bins of 3 profiles each
+    assert avg.internal_temperature is not None
+    assert np.isclose(avg.internal_temperature[0], np.mean([0, 1, 2]) + 273.15)
+    assert np.isclose(avg.internal_temperature[1], np.mean([3, 4, 5]) + 273.15)
+
+
+def test_average_time_handles_missing_internal_temperature():
+    c = _ceilo()
+    assert c.internal_temperature is None
+    assert average_time(c, 30).internal_temperature is None

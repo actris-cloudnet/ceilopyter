@@ -64,5 +64,6 @@ def average_time(ceilo: Ceilo, resolution: float) -> Ceilo:
         ceilo.wavelength,
         zenith,
         depol=average(ceilo.depol),
+        internal_temperature=average(ceilo.internal_temperature),
     )
     return Ceilo(raw, beta_raw, beta, ceilo.calibration_factor)

@@ -15,6 +15,8 @@ class Ceilo:
         wavelength: Wavelength (nm)
         zenith_angle: Zenith angle (deg)
         depol: Linear depolarization ratio (CL61 only, else None)
+        internal_temperature: Instrument internal temperature (K, CHM15k only,
+            else None)
     """
 
     def __init__(
@@ -32,3 +34,4 @@ class Ceilo:
         self.wavelength = raw.wavelength
         self.zenith_angle = raw.zenith_angle
         self.depol = raw.depol
+        self.internal_temperature = raw.internal_temperature

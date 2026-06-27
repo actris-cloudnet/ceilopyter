@@ -13,6 +13,8 @@ class CeiloRaw:
         wavelength: Wavelength (nm)
         zenith_angle: Zenith angle (deg)
         depol: Linear depolarization ratio (CL61 only, else None)
+        internal_temperature: Instrument internal temperature (K, CHM15k only,
+            else None). Used by the temperature-dependent overlap correction.
     """
 
     def __init__(
@@ -23,6 +25,7 @@ class CeiloRaw:
         wavelength: float,
         zenith_angle: npt.NDArray[np.floating] | None = None,
         depol: npt.NDArray[np.floating] | None = None,
+        internal_temperature: npt.NDArray[np.floating] | None = None,
     ):
         self.time = time
         self.range = range
@@ -30,6 +33,7 @@ class CeiloRaw:
         self.wavelength = wavelength
         self.zenith_angle = zenith_angle
         self.depol = depol
+        self.internal_temperature = internal_temperature
 
 
 def concatenate_raw(raw: list[CeiloRaw]) -> CeiloRaw:
@@ -83,4 +87,5 @@ def concatenate_raw(raw: list[CeiloRaw]) -> CeiloRaw:
         wavelength,
         concat_field("zenith_angle", per_gate=False),
         depol=concat_field("depol", per_gate=True),
+        internal_temperature=concat_field("internal_temperature", per_gate=False),
     )
