@@ -40,6 +40,12 @@ module = ["cftime.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
+filterwarnings = [
+  "error",
+  # netCDF4 1.7.x sets a NumPy array's shape in-place on assignment, which
+  # NumPy 2.5 deprecated. Unavoidable from our side until fixed upstream.
+  "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning",
+]
 pythonpath = ["."]
 
 [tool.release-version]
