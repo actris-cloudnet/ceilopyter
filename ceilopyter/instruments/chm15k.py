@@ -7,6 +7,8 @@ import numpy.typing as npt
 from cftime import num2pydate
 from numpy import ma
 
+from ceilopyter.noise import remove_noise
+
 from ..ceilo import Ceilo
 from ..ceilo_raw import CeiloRaw, concatenate_raw
 
@@ -25,7 +27,14 @@ def read_chm15k(
         raw.append(_read_file(file))
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw, None, calibration_factor)
+
+    beta_uncorr = beta_raw / (concat.range * 1e-3) ** 2
+    is_noise = remove_noise(concat.time, concat.range, beta_uncorr, noise_floor=4e-9)
+    # noise_floor=1e-9 # for beta
+    # noise_floor=4e-9 # for beta_smooth
+    beta = ma.masked_where(is_noise, beta_raw)
+
+    return Ceilo(concat, beta_raw, beta, calibration_factor)
 
 
 def _read_file(file: str | PathLike) -> CeiloRaw:
@@ -34,7 +43,7 @@ def _read_file(file: str | PathLike) -> CeiloRaw:
         range = nc["range"][:]
         beta = _get_beta(nc)
         wavelength = nc["wavelength"][:]
-        zenith_angle = nc["zenith"][:]
+        zenith_angle = nc["zenith"][:] if "zenith" in nc.variables else None
         return CeiloRaw(time, range, beta, wavelength, zenith_angle)
 
 
@@ -53,34 +62,52 @@ def _get_beta(nc: netCDF4.Dataset) -> npt.NDArray[np.floating]:
     # When netcdf_mode is 2 (or unspecified in old files), we have beta_raw
     # without calibration factor applied. This mode is recommended in ACTRIS
     # CCRES ALC SOP.
+    # beta = ((P_raw / lp) - b) / (cs * o(r) * p_calc) * r * r
     beta = nc["beta_raw"][:]
 
-    # In old files, beta_raw is normalized by stddev and not range corrected:
-    # beta_raw = (P_raw / laser_pulses - base) / stddev
-    if _is_old_version(nc):
-        stddev = nc["stddev"][:]
+    sw_version = _get_sw_version(nc)
+    if isinstance(sw_version, np.integer) and sw_version <= 135:
+        # beta_raw = P_raw
+        laser_pulses = nc["laser_pulses"][:]
+        base = np.mean(beta[:, -5:], axis=1) / laser_pulses
         rng = nc["range"][:]
-        normalised_apd = _get_nn(nc)
-        correction = stddev / normalised_apd
-        beta *= correction[:, np.newaxis]
-        beta *= rng**2
+        overlap = _awful_overlap(rng)
+        signal = beta / laser_pulses[:, np.newaxis] - base[:, np.newaxis]
+        beta = signal / overlap * rng**2
+    elif isinstance(sw_version, np.integer) or sw_version < "0.702":
+        # beta_raw = (P_raw / laser_pulses - base) / stddev
+        apd = _get_nn(nc)
+        rng = nc["range"][:]
+        overlap = _awful_overlap(rng)
+        stddev = nc["stddev"][:]
+        signal = beta * stddev[:, np.newaxis]
+        beta = signal / (overlap * apd[:, np.newaxis]) * rng**2
 
     return beta
 
 
-def _is_old_version(nc: netCDF4.Dataset) -> bool:
+def _get_sw_version(nc: netCDF4.Dataset) -> np.integer | str:
     version = nc.software_version
     # In old files, the version is a single integer.
     if isinstance(version, np.integer):
-        return True
+        return version
     # In newer files, the version is a space-separated list: Operating system,
     # FPGA, firmware, CloudDetectionMode (added in firmware version 0.747).
     if isinstance(version, str):
         parts = version.split()
-        firmware = parts[2]
-        return firmware < "0.702"
+        return parts[2]
     msg = f"Cannot determine version: {version}"
     raise ValueError(msg)
+
+
+def _awful_overlap(rng):
+    n = len(rng)
+    i = np.nonzero(rng > 200)[0][0]
+    j = np.nonzero(rng > 800)[0][0]
+    zero = np.zeros(i)
+    mids = np.linspace(0, 1, j - i)
+    ones = np.ones(n - j)
+    return np.concatenate([zero, mids, ones])
 
 
 def _get_nn(nc: netCDF4.Dataset) -> float:
@@ -97,6 +124,12 @@ def _get_nn(nc: netCDF4.Dataset) -> float:
     else:
         logging.warning("Unable to compute normalized APD: variable nn1 not found")
         return 1
+    # print(nn1)
+    # asd = ma.compressed(nn1)
+    # asd = asd[asd > 0]
+    # print(asd)
+    if len(nn1) <= 1 or nn1[1] is ma.masked or nn1[1] == 0:
+        return np.array([1])
     median_nn1 = ma.median(nn1)
     # Parameters taken from the MATLAB implementation of Cloudnet.
     if 120 < median_nn1 < 160:
@@ -109,5 +142,5 @@ def _get_nn(nc: netCDF4.Dataset) -> float:
             "median nn1 (%s) outside of expected range",
             median_nn1,
         )
-        return 1
+        return np.array([1])
     return step_factor ** (-(nn1 - reference) / scale)

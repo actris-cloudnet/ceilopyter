@@ -88,3 +88,23 @@ def next_line(
         msg = f"Expected {length} characters but got {len(line)} instead"
         raise InvalidMessageError(msg)
     return line
+
+
+def cumsumr(array: npt.NDArray, axis: int = 0) -> npt.NDArray:
+    """Finds cumulative sum that resets on 0.
+
+    Args:
+        array: Input array.
+        axis: Axis where the sum is calculated. Default is 0.
+
+    Returns:
+        Cumulative sum, restarted at 0.
+
+    Examples:
+        >>> x = np.array([0, 0, 1, 1, 0, 0, 0, 1, 1, 1])
+        >>> cumsumr(x)
+            [0, 0, 1, 2, 0, 0, 0, 1, 2, 3]
+
+    """
+    cums = array.cumsum(axis=axis)
+    return cums - np.maximum.accumulate(cums * (array == 0), axis=axis)
