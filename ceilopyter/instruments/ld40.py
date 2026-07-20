@@ -3,6 +3,9 @@ import logging
 from os import PathLike
 
 import numpy as np
+from numpy import ma
+
+from ceilopyter.utils import awful_overlap
 
 from ..ceilo import Ceilo
 from ..ceilo_raw import CeiloRaw, concatenate_raw
@@ -23,7 +26,7 @@ def read_ld40(
         raw.append(_read_file(file))
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw, None, calibration_factor)
+    return Ceilo(concat, beta_raw=beta_raw, calibration_factor=calibration_factor)
 
 
 def _read_file(filename: str | PathLike) -> CeiloRaw:
@@ -49,6 +52,10 @@ def _read_file(filename: str | PathLike) -> CeiloRaw:
                 )
             )
             betas.append(np.array([int(v) for v in values[2:]]))
+    res = rng[1] - rng[0]
+    rng = rng + res / 2
     time = np.array(times)
-    beta = np.array(betas) * rng**2 * 1e-12
+    overlap = awful_overlap(rng, 100, 200)
+    beta = np.array(betas)
+    beta = ma.divide(beta, overlap) * rng**2 * 1e-12
     return CeiloRaw(time, rng, beta, 855)

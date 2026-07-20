@@ -5,6 +5,7 @@ from collections.abc import Iterator
 
 import numpy as np
 import numpy.typing as npt
+from numpy import ma
 
 from ceilopyter.common import InvalidMessageError
 
@@ -88,3 +89,53 @@ def next_line(
         msg = f"Expected {length} characters but got {len(line)} instead"
         raise InvalidMessageError(msg)
     return line
+
+
+def cumsumr(array: npt.NDArray, axis: int = 0) -> npt.NDArray:
+    """Finds cumulative sum that resets on 0.
+
+    Args:
+        array: Input array.
+        axis: Axis where the sum is calculated. Default is 0.
+
+    Returns:
+        Cumulative sum, restarted at 0.
+
+    Examples:
+        >>> x = np.array([0, 0, 1, 1, 0, 0, 0, 1, 1, 1])
+        >>> cumsumr(x)
+            [0, 0, 1, 2, 0, 0, 0, 1, 2, 3]
+
+    """
+    cums = array.cumsum(axis=axis)
+    return cums - np.maximum.accumulate(cums * (array == 0), axis=axis)
+
+
+def interpolate_masked(array: npt.NDArray) -> npt.NDArray:
+    out = ma.copy(array)
+    m = ma.getmaskarray(array)
+    if np.all(m):
+        return out
+    d = np.diff(np.pad(m.astype(np.int8), 1))
+    start = np.nonzero(d == 1)[0]
+    end = np.nonzero(d == -1)[0]
+    for a, b in zip(start, end, strict=True):
+        if a == 0:
+            out[: b + 1] = out[b]
+        elif b == len(array):
+            out[a - 1 :] = out[a - 1]
+        else:
+            out[a - 1 : b + 1] = np.linspace(out[a - 1], out[b], b - a + 2)
+    return out
+
+
+def awful_overlap(
+    rng: npt.NDArray[np.floating], rng_zero: float, rng_one: float
+) -> npt.NDArray[np.floating]:
+    n = len(rng)
+    i = np.nonzero(rng > rng_zero)[0][0]
+    j = np.nonzero(rng > rng_one)[0][0]
+    zero = np.zeros(i)
+    mids = np.linspace(0, 1, j - i)
+    ones = np.ones(n - j)
+    return np.concatenate([zero, mids, ones])

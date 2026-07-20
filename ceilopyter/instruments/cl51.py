@@ -17,4 +17,4 @@ def read_cl51(
     raw = read_msgs(files, read_cl_file, wavelength=910.0)
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw, None, calibration_factor)
+    return Ceilo(concat, beta_raw=beta_raw, calibration_factor=calibration_factor)

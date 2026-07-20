@@ -23,7 +23,7 @@ def read_cl61(
         raw = [_read_file(files)]
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw, None, calibration_factor)
+    return Ceilo(concat, beta_raw=beta_raw, calibration_factor=calibration_factor)
 
 
 def _read_file(file: str | PathLike) -> CeiloRaw:

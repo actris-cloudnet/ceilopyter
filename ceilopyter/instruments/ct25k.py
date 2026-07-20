@@ -28,11 +28,19 @@ def read_ct25k(
     beta_calib = concat.beta * calibration_factor
     beta_uncorr = beta_calib / r2 if noise_h2 else _fix_beta(r2, beta_calib)
 
-    is_noise = remove_noise(beta_uncorr, noise_floor=6e-8)
+    is_noise, beta_smooth = remove_noise(
+        concat.time, concat.range, beta_uncorr, noise_floor=6e-8
+    )
     beta_raw = beta_uncorr * r2
     beta = ma.masked_where(is_noise, beta_raw)
 
-    return Ceilo(concat, beta_raw, beta, calibration_factor)
+    return Ceilo(
+        concat,
+        beta_raw=beta_raw,
+        beta=beta,
+        beta_smooth=beta_smooth,
+        calibration_factor=calibration_factor,
+    )
 
 
 def _fix_beta(

@@ -18,4 +18,4 @@ def read_cs135(
     raw = read_msgs(files, read_cs_file, wavelength=905.0)
     concat = concatenate_raw(raw)
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw, None, calibration_factor)
+    return Ceilo(concat, beta_raw=beta_raw, calibration_factor=calibration_factor)
