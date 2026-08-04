@@ -18,12 +18,15 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Atmospheric Science",
 ]
-dependencies = ["netCDF4", "numpy"]
+dependencies = ["cloudnet-api-client", "matplotlib", "netCDF4", "numpy", "scipy"]
 dynamic = ["version"]
 
 [project.optional-dependencies]
 test = ["mypy", "pytest"]
-dev = ["pre-commit", "release-version"]
+dev = ["pre-commit", "release-version", "scipy-stubs"]
+
+[project.scripts]
+ceilopyter = "ceilopyter.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/actris-cloudnet/ceilopyter"
