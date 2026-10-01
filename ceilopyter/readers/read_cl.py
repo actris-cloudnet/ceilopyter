@@ -8,7 +8,7 @@ from .. import utils
 from ..common import InvalidMessageError, Message, Status
 
 FORMATS = [
-    utils.date_format_to_regex(rb"-%Y-%m-%d %H:%M:%S\r?\n"),
+    utils.date_format_to_regex(rb"-?%Y-%m-%d %H:%M:%S\r?\n"),
     utils.date_format_to_regex(rb"%Y-%m-%d %H:%M:%S,"),
 ]
 
