@@ -8,7 +8,7 @@ from numpy import ma
 from ..ceilo import Ceilo
 from ..ceilo_raw import concatenate_raw
 from ..common import read_msgs
-from ..noise import remove_noise
+from ..noise import calc_cloud_mask, remove_noise
 from ..readers.read_ct import read_ct_file
 
 
@@ -28,8 +28,9 @@ def read_ct25k(
     beta_calib = concat.beta * calibration_factor
     beta_uncorr = beta_calib / r2 if noise_h2 else _fix_beta(r2, beta_calib)
 
+    cloud_mask = calc_cloud_mask(concat.time, concat.range, beta_uncorr)
     is_noise, beta_smooth = remove_noise(
-        concat.time, concat.range, beta_uncorr, noise_floor=6e-8
+        concat.time, concat.range, beta_uncorr, noise_floor=6e-8, cloud_mask=cloud_mask
     )
     beta_raw = beta_uncorr * r2
     beta = ma.masked_where(is_noise, beta_raw)

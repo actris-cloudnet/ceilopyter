@@ -5,6 +5,7 @@ from os import PathLike
 import numpy as np
 from numpy import ma
 
+from ceilopyter.noise import remove_noise
 from ceilopyter.utils import awful_overlap
 
 from ..ceilo import Ceilo
@@ -25,8 +26,28 @@ def read_ld40(
     for file in files:
         raw.append(_read_file(file))
     concat = concatenate_raw(raw)
+    r2 = (concat.range * 1e-3) ** 2
     beta_raw = concat.beta * calibration_factor
-    return Ceilo(concat, beta_raw=beta_raw, calibration_factor=calibration_factor)
+    beta_uncorr = beta_raw / r2
+    cloud_mask = beta_uncorr > 1e-5
+    is_noise, beta_smooth = remove_noise(
+        concat.time,
+        concat.range,
+        beta_uncorr,
+        noise_floor=0,
+        cloud_mask=cloud_mask,
+        snr_limit=12,
+    )
+    # Filter constant artefact at 8 km and assume noise above.
+    is_noise[:, concat.range > 7500] = True
+    beta = ma.masked_where(is_noise, beta_raw)
+    return Ceilo(
+        concat,
+        beta_raw=beta_raw,
+        beta=beta,
+        beta_smooth=beta_smooth,
+        calibration_factor=calibration_factor,
+    )
 
 
 def _read_file(filename: str | PathLike) -> CeiloRaw:

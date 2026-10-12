@@ -7,7 +7,7 @@ import numpy.typing as npt
 from cftime import num2pydate
 from numpy import ma
 
-from ceilopyter.noise import remove_noise
+from ceilopyter.noise import calc_cloud_mask, remove_noise
 from ceilopyter.utils import awful_overlap
 
 from ..ceilo import Ceilo
@@ -30,11 +30,13 @@ def read_chm15k(
     beta_raw = concat.beta * calibration_factor
 
     beta_uncorr = beta_raw / (concat.range * 1e-3) ** 2
+    cloud_mask = calc_cloud_mask(concat.time, concat.range, beta_uncorr)
     is_noise, beta_smooth = remove_noise(
         concat.time,
         concat.range,
         beta_uncorr,
         noise_floor=4e-9,
+        cloud_mask=cloud_mask,
         filter_above_negative=True,
     )
     beta = ma.masked_where(is_noise, beta_raw)

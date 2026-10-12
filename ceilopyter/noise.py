@@ -15,6 +15,7 @@ def remove_noise(
     rng: npt.NDArray[np.floating],
     beta_uncorr: npt.NDArray[np.floating],
     noise_floor: float,
+    cloud_mask: npt.NDArray[np.bool],
     snr_limit: float = 5,
     filter_above_negative: bool = False,
 ) -> tuple[npt.NDArray[np.bool_], npt.NDArray[np.floating]]:
@@ -29,7 +30,6 @@ def remove_noise(
         beta_uncorr = np.where(is_above_negative, noise_floor, beta_uncorr)
 
     smooth, smooth_uncorr = _calc_beta_smooth(time, rng, beta_uncorr)
-    cloud_mask = _calc_cloud_mask(time, rng, beta_uncorr)
 
     fraction = 0.1
     n_top_gates = round(n_range * fraction)
@@ -88,7 +88,7 @@ def _calc_sigma_units(
     return x_std, y_std
 
 
-def _calc_cloud_mask(
+def calc_cloud_mask(
     time: npt.NDArray,
     rng: npt.NDArray[np.floating],
     beta_uncorr: npt.NDArray[np.floating],
