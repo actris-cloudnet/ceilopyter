@@ -41,6 +41,8 @@ def read_ld40(
     # Filter constant artefact at 8 km and assume noise above.
     is_noise[:, concat.range > 7500] = True
     beta = ma.masked_where(is_noise, beta_raw)
+    beta_smooth = ma.masked_where(is_noise, beta_smooth)
+
     return Ceilo(
         concat,
         beta_raw=beta_raw,

@@ -40,6 +40,7 @@ def read_chm15k(
         filter_above_negative=True,
     )
     beta = ma.masked_where(is_noise, beta_raw)
+    beta_smooth = ma.masked_where(is_noise, beta_smooth)
 
     return Ceilo(
         concat,

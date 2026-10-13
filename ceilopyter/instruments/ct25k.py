@@ -34,6 +34,7 @@ def read_ct25k(
     )
     beta_raw = beta_uncorr * r2
     beta = ma.masked_where(is_noise, beta_raw)
+    beta_smooth = ma.masked_where(is_noise, beta_smooth)
 
     return Ceilo(
         concat,
