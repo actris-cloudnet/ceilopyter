@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os.path
 from os import PathLike
 
 import numpy as np
@@ -24,7 +25,11 @@ def read_ld40(
         logging.warning("Using default calibration factor: %s", calibration_factor)
     raw = []
     for file in files:
-        raw.append(_read_file(file))
+        try:
+            raw.append(_read_file(file))
+        except InvalidMessageError as e:
+            logging.warning("Failed to read %s: %s", os.path.basename(file), e)
+            continue
     concat = concatenate_raw(raw)
     r2 = (concat.range * 1e-3) ** 2
     beta_raw = concat.beta * calibration_factor
@@ -75,6 +80,8 @@ def _read_file(filename: str | PathLike) -> CeiloRaw:
                 )
             )
             betas.append(np.array([int(v) for v in values[2:]]))
+    if len(times) == 0:
+        raise InvalidMessageError("No data")
     res = rng[1] - rng[0]
     rng = rng + res / 2
     time = np.array(times)
