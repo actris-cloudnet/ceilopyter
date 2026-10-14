@@ -54,12 +54,12 @@ def read_chm15k(
 def _read_file(file: str | PathLike) -> CeiloRaw:
     with netCDF4.Dataset(file) as nc:
         time, time_ind = _get_time(nc)
-        range = _get_range(nc)
-        beta = _get_beta(nc)[time_ind]
+        rng = _get_range(nc)
+        beta = _get_beta(nc, rng)[time_ind]
         wavelength = 1064.0
         zenith_angle = nc["zenith"][:] if "zenith" in nc.variables else None
         serial_number = nc.source
-        return CeiloRaw(time, range, beta, wavelength, zenith_angle, serial_number)
+        return CeiloRaw(time, rng, beta, wavelength, zenith_angle, serial_number)
 
 
 # Filter outliers in some files (e.g. Lindenberg 2010-12-02 and 2010-12-18).
@@ -76,11 +76,24 @@ def _get_time(nc: netCDF4.Dataset):
 
 def _get_range(nc: netCDF4.Dataset):
     rng = nc["range"][:]
-    res = rng[1] - rng[0]
-    return rng - res / 2
+    if ma.getmaskarray(rng).all():
+        # Variable range, and sometimes range_gate, are masked in some old files
+        # (e.g. Lindenberg 2008-06-04 and 2010-10-15). According to the manual,
+        # NetCDF data resolution is 5 m – 30 m in 5 m steps (can be set by the
+        # user, default 15 m).
+        rng_gate = 5 * round(15000 / (5 * len(rng)))
+        logging.warning(
+            "range is masked, calculating it assuming resolution of %s m", rng_gate
+        )
+        rng = rng_gate * np.arange(1, len(rng) + 1)
+    else:
+        rng_gate = rng[1] - rng[0]
+    return rng - rng_gate / 2
 
 
-def _get_beta(nc: netCDF4.Dataset) -> npt.NDArray[np.floating]:
+def _get_beta(
+    nc: netCDF4.Dataset, rng: npt.NDArray[np.floating]
+) -> npt.NDArray[np.floating]:
     """Get range-corrected backscatter coefficient.
 
     References:
@@ -103,14 +116,12 @@ def _get_beta(nc: netCDF4.Dataset) -> npt.NDArray[np.floating]:
         # beta_raw = P_raw
         laser_pulses = nc["laser_pulses"][:]
         base = np.mean(beta[:, -5:], axis=1) / laser_pulses
-        rng = nc["range"][:]
         overlap = awful_overlap(rng, 200, 800)
         signal = beta / laser_pulses[:, np.newaxis] - base[:, np.newaxis]
         beta = signal / overlap * rng**2
     elif isinstance(sw_version, np.integer) or sw_version < "0.702":
         # beta_raw = (P_raw / laser_pulses - base) / stddev
         apd = _get_nn(nc)
-        rng = nc["range"][:]
         overlap = awful_overlap(rng, 200, 800)
         stddev = nc["stddev"][:]
         signal = beta * stddev[:, np.newaxis]
