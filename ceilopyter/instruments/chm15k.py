@@ -53,13 +53,25 @@ def read_chm15k(
 
 def _read_file(file: str | PathLike) -> CeiloRaw:
     with netCDF4.Dataset(file) as nc:
-        time = num2pydate(nc["time"][:], nc["time"].units)
+        time, time_ind = _get_time(nc)
         range = _get_range(nc)
-        beta = _get_beta(nc)
+        beta = _get_beta(nc)[time_ind]
         wavelength = 1064.0
         zenith_angle = nc["zenith"][:] if "zenith" in nc.variables else None
         serial_number = nc.source
         return CeiloRaw(time, range, beta, wavelength, zenith_angle, serial_number)
+
+
+# Filter outliers in some files (e.g. Lindenberg 2010-12-02 and 2010-12-18).
+_TIME_MIN = 0  # 1904-01-01 00:00:00
+_TIME_MAX = 255485145599  # 9999-12-31 23:59:59
+
+
+def _get_time(nc: netCDF4.Dataset):
+    time = nc["time"][:]
+    time_ind = (time >= _TIME_MIN) & (time <= _TIME_MAX)
+    time = num2pydate(time[time_ind], nc["time"].units)
+    return time, time_ind
 
 
 def _get_range(nc: netCDF4.Dataset):
