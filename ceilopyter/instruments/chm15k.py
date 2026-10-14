@@ -56,7 +56,7 @@ def _read_file(file: str | PathLike) -> CeiloRaw:
         time = num2pydate(nc["time"][:], nc["time"].units)
         range = _get_range(nc)
         beta = _get_beta(nc)
-        wavelength = nc["wavelength"][:]
+        wavelength = 1064.0
         zenith_angle = nc["zenith"][:] if "zenith" in nc.variables else None
         serial_number = nc.source
         return CeiloRaw(time, range, beta, wavelength, zenith_angle, serial_number)
