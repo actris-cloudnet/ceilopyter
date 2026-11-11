@@ -13,13 +13,14 @@ requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Topic :: Scientific/Engineering :: Atmospheric Science",
 ]
 dependencies = ["cloudnet-api-client", "matplotlib", "netCDF4", "numpy", "scipy"]
 dynamic = ["version"]
+license = "MIT"
+license-files = ["LICENSE"]
 
 [project.optional-dependencies]
 test = ["mypy", "pytest"]
